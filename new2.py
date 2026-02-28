@@ -3,7 +3,7 @@ import re
 import nltk
 from collections import defaultdict, Counter
 
-# Downloads (run once; keep if needed)
+
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 
@@ -28,7 +28,7 @@ class MiniRecombiner:
                     continue
                 self.words_by_pos[pos][word] += 1
 
-        # build convenient aggregated categories
+        #  aggregated categories
         self.cats = {
             "DET": sum_counters(self.words_by_pos, ("DT",)),
             "ADJ": sum_counters(self.words_by_pos, ("JJ", "JJR", "JJS")),
@@ -53,7 +53,7 @@ class MiniRecombiner:
         return self._sample_from_counter(self.cats.get(cat, Counter()))
 
     def _is_plural_from_choice(self, word, cat):
-        # simple heuristic
+        
         if cat == "NOUN_PL":
             return True
         if cat == "NOUN_SG":
@@ -63,25 +63,33 @@ class MiniRecombiner:
         return False
 
     def _conjugate_3sg(self, verb):
-        # Very naive conjugation: handle common patterns
+        # Very naive conjugation
         if verb.endswith("y") and len(verb) > 1 and verb[-2] not in "aeiou":
             return verb[:-1] + "ies"
         if verb.endswith(("s", "sh", "ch", "x", "z", "o")):
             return verb + "es"
         return verb + "s"
-
+    
+    def _correct_indefinite_article(self, det, next_word):
+        if not det or det.lower() not in ("a", "an") or not next_word:
+            return det
+        # simple vowel check (naive but effective for this toy model)
+        if next_word[0].lower() in "aeiou":
+            return "an"
+        else:
+            return "a"
+        
     def _choose_verb_for_subject(self, subj_plural):
-        # prefer correct POS-tagged verb forms if available
+        
         if subj_plural:
-            # plural subject -> VBP preferred
+            
             v = self._sample_cat("VBP") or self._sample_cat("VB")
             return v
         else:
-            # singular -> try VBZ then fallback conjugation
+            
             v = self._sample_cat("VBZ") or self._sample_cat("VB")
             if v:
-                # if v came from VB (base) but no VBZ available, conjugate
-                # detect if v appears in VBZ set; if not, try conjugating base
+                
                 if v in self.cats.get("VBZ", {}):
                     return v
                 if v in self.cats.get("VB", {}):
@@ -93,24 +101,28 @@ class MiniRecombiner:
         if for_subject and random.random() < 0.25 and self.cats["PRON"]:
             pron = self._sample_cat("PRON")
             return pron, self._is_plural_from_choice(pron, "PRON")
-        # Determiner sometimes omitted
+
         det = ""
         if random.random() < 0.75 and self.cats["DET"]:
             det = self._sample_cat("DET")
-        # optionally one adjective
+
         adj = ""
         if random.random() < 0.4 and self.cats["ADJ"]:
             adj = self._sample_cat("ADJ")
-        # choose plural vs singular noun (subject bias)
+
         if random.random() < 0.25 and self.cats["NOUN_PL"]:
             noun = self._sample_cat("NOUN_PL")
             plural = True
         else:
             noun = self._sample_cat("NOUN_SG") or self._sample_cat("NOUN_PL")
             plural = False if noun in self.cats.get("NOUN_SG", {}) else True
-            # fallback heuristics
-            if noun == "":
-                noun = self._sample_cat("NOUN_SG") or self._sample_cat("NOUN_PL") or "thing"
+        if noun == "":
+            noun = self._sample_cat("NOUN_SG") or self._sample_cat("NOUN_PL") or "thing"
+
+        
+        next_word = adj if adj else noun
+        det = self._correct_indefinite_article(det, next_word)
+
         parts = " ".join(p for p in (det, adj, noun) if p)
         return parts, plural
 
@@ -122,7 +134,7 @@ class MiniRecombiner:
         return f"{prep} {obj}" if obj else prep
 
     def generate_sentence(self):
-        # Build short, grammatical sentence using NP -> VP -> (NP/PP)
+        
         subj, subj_plural = self._build_np(for_subject=True)
         verb = self._choose_verb_for_subject(subj_plural)
         if not verb:
@@ -137,9 +149,9 @@ class MiniRecombiner:
 
         # assemble
         pieces = [p for p in (subj, verb, obj, pp) if p]
-        # enforce shortness: trim optional parts if too long
+       
         if len(" ".join(pieces).split()) > 12:
-            # drop PP first, then object
+            
             if pp:
                 pieces.remove(pp)
             if len(" ".join(pieces).split()) > 10 and obj:
