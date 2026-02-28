@@ -13,7 +13,11 @@ if NLTK_DIR not in nltk.data.path:
     nltk.data.path.insert(0, NLTK_DIR)
 
 nltk.download("punkt_tab", quiet=True)
+# if we bundle corpora in the repo this call is a no-op, but it also
+# serves as a fallback when the folder isn't present at startup
 nltk.download("averaged_perceptron_tagger", download_dir=NLTK_DIR, quiet=True)
+# newer NLTK versions use the "_eng" variant; download just in case
+nltk.download("averaged_perceptron_tagger_eng", download_dir=NLTK_DIR, quiet=True)
 
 
 from new2 import MiniRecombiner
