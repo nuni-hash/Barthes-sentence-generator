@@ -1,9 +1,11 @@
 import os
+import tempfile
 import nltk
 import streamlit as st
 
-NLTK_DIR = os.path.join(os.path.abspath("."), "nltk_data")
-os.environ["NLTK_DATA"] = NLTK_DIR          
+# Use a writable temp directory for NLTK data in hosted environments
+NLTK_DIR = os.environ.get("NLTK_DATA_PATH") or os.path.join(tempfile.gettempdir(), "nltk_data")
+os.environ["NLTK_DATA"] = NLTK_DIR
 os.makedirs(NLTK_DIR, exist_ok=True)
 if NLTK_DIR not in nltk.data.path:
     nltk.data.path.insert(0, NLTK_DIR)
