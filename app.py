@@ -12,8 +12,7 @@ os.makedirs(NLTK_DIR, exist_ok=True)
 if NLTK_DIR not in nltk.data.path:
     nltk.data.path.insert(0, NLTK_DIR)
 
-
-nltk.download("punkt", download_dir=NLTK_DIR, quiet=True)
+nltk.download("punkt_tab", quiet=True)
 nltk.download("averaged_perceptron_tagger", download_dir=NLTK_DIR, quiet=True)
 
 
