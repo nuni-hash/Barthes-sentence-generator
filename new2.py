@@ -3,10 +3,6 @@ import re
 import nltk
 from collections import defaultdict, Counter
 
-
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-
 START = "<START>"
 END = "<END>"
 
